@@ -1,0 +1,71 @@
+import pygame
+from game import Game
+from ground import Ground
+from platform import Platform
+pygame.init()
+
+
+isJump = False
+jumpCount = 20
+background = pygame.image.load("assets/bg0.jpg")
+screen_x, screen_y = background.get_size()
+scroll_x = screen_x
+scroll = True
+screen = pygame.display.set_mode((1280, 720))
+pygame.display.set_caption("game by jero")
+gameIcon = pygame.image.load("assets/icon.png")
+gameIcon = pygame.display.set_icon(gameIcon)
+ground = Ground()
+platform = Platform()
+game = Game()
+fps = pygame.time.Clock()
+
+loop = True
+
+while loop:
+    screen.blit(background, (scroll_x, 0))
+    screen.blit(background, (scroll_x + screen_x, 0))
+    screen.blit(ground.image, ground.rect)
+    pygame.draw.rect(screen, (0, 255, 0), game.ground.rect, 2)
+    screen.blit(game.player.image, game.player.rect)
+    pygame.draw.rect(screen, (0, 255, 0), game.player.rect, 2)
+    screen.blit(platform.image, platform.rect)
+    pygame.draw.rect(screen, (0, 255, 0), game.platform.rect, 2)
+    game.player.all_projectiles.draw(screen)
+    fps.tick(60)
+    scroll_x -= 2
+    if scroll_x < -screen_x:
+        scroll_x = 0
+    if game.pressed.get(pygame.K_RIGHT) and game.player.rect.x + game.player.rect.width < screen.get_width():
+        game.player.move_right()
+    elif game.pressed.get(pygame.K_LEFT) and game.player.rect.x > 0:
+        game.player.move_left()
+    if game.pressed.get(pygame.K_SPACE) and game.player.rect.y > 0:
+        game.player.move_jump()
+    if not game.pressed.get(pygame.K_SPACE):
+        game.player.move_fall()
+    elif game.pressed.get(pygame.K_SPACE):
+        game.player.isJump = True
+    if jumpCount >= -20:
+        game.player.rect.y -= (jumpCount * abs(jumpCount)) * 0.1
+        jumpCount -= 0.3
+    else:
+        jumpCount = 5
+        isJump = False
+    if game.player.rect.colliderect(game.ground.rect):
+        game.player.ground_fall()
+    if game.player.rect.colliderect(game.platform.rect):
+        game.player.platform_fall()
+
+    pygame.display.flip()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            loop = False
+            pygame.quit()
+        elif event.type == pygame.KEYDOWN:
+            game.pressed[event.key] = True
+            if event.key == pygame.K_UP:
+                game.player.launch_projectile()
+        elif event.type == pygame.KEYUP:
+            game.pressed[event.key] = False
